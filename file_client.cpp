@@ -61,14 +61,17 @@ int main(int argc, char *argv[])
         }
         bytesWritten += send(clientSd, (char*)&msg, strlen(msg), 0);
         cout << "Awaiting server response..." << endl;
-        memset(&msg, 0, sizeof(msg));//clear the buffer
-        bytesRead += recv(clientSd, (char*)&msg, sizeof(msg), 0);
-        if(!strcmp(msg, "exit"))
-        {
-            cout << "Server has quit the session" << endl;
-            break;
+        
+        while (1) {
+            memset(&msg, 0, sizeof(msg));
+            bytesRead += recv(clientSd, (char*)&msg, sizeof(msg), 0);
+            if(!strcmp(msg, "exit"))
+            {
+                cout << "Server has quit the session" << endl;
+                break;
+            }
+            cout << "Server: " << msg << endl;
         }
-        cout << "Server: " << msg << endl;
     }
     gettimeofday(&end1, NULL);
     close(clientSd);

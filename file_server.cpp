@@ -15,6 +15,53 @@
 #include <fcntl.h>
 #include <fstream>
 using namespace std;
+
+#define REQUEST_BUFFER_LENGTH 1500
+#define FILE_BUFFER_LENGTH 1500
+
+int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read) {
+    if (bytes_read >= REQUEST_BUFFER_LENGTH) return 1;
+    fstream file;
+    request_buffer[bytes_read] = '\0';
+    string request = string(request_buffer);
+    if (request.substr(0,4) == "GET ") {
+        size_t pos = request.find(" ", 4);
+        string path = request.substr(4, pos);
+        file.open(path, ios::in | ios::binary);
+        if(file.is_open()){
+            cout<<"[LOG] : File is ready to Transmit.\n";
+        }
+        else{
+            cout<<"[ERROR] : File loading failed, Exititng.\n";
+            send(socket, "400", 4, 0);
+            return 1;
+        }
+        int bytes_read = 0;
+        char file_buffer[FILE_BUFFER_LENGTH];
+        do {
+            memset(file_buffer, 0, FILE_BUFFER_LENGTH);
+            file.read(file_buffer, FILE_BUFFER_LENGTH);
+            if (file.gcount() == 0) break;
+            int sent = send(socket, file_buffer, file.gcount(), 0);
+            
+            cout<<"[LOG] : Transmitted Data Size "<<sent<<" Bytes.\n";
+        } while (1);//file.gcount() == FILE_BUFFER_LENGTH);
+        // if (file.read(file_buffer, FILE_BUFFER_LENGTH) || file.gcount() > 0) {
+        //     send(socket, file_buffer, FILE_BUFFER_LENGTH, 0);
+        //     cout<<"[LOG] : Transmitted Data Size "<<FILE_BUFFER_LENGTH<<" Bytes.\n";
+        // }
+        file.close();
+        // string contents((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+        // cout<<"[LOG] : Transmission Data Size "<<contents.length()<<" Bytes.\n";
+        // cout<<"[LOG] : Sending...\n";
+        // int bytes_sent = send(socket , contents.c_str() , contents.length() , 0 );
+        // cout<<"[LOG] : Transmitted Data Size "<<bytes_sent<<" Bytes.\n";
+        // cout<<"[LOG] : File Transfer Complete.\n";
+    } else {
+        send(socket, "huh", 4, 0);
+    }
+    return 0;
+}
 //Server side
 int main(int argc, char *argv[])
 {
@@ -27,7 +74,7 @@ int main(int argc, char *argv[])
     //grab the port number
     int port = atoi(argv[1]);
     //buffer to send and receive messages with
-    char msg[1500];
+    char msg[REQUEST_BUFFER_LENGTH];
      
     //setup a socket and connection tools
     sockaddr_in servAddr;
@@ -77,7 +124,7 @@ int main(int argc, char *argv[])
     {
         //receive a message from the client (listen)
         cout << "Awaiting client response..." << endl;
-        memset(&msg, 0, sizeof(msg));//clear the buffer
+        memset(msg, 0, sizeof(msg));//clear the buffer
         bytesRead += recv(newSd, (char*)&msg, sizeof(msg), 0);
         if(!strcmp(msg, "exit"))
         {
@@ -86,18 +133,9 @@ int main(int argc, char *argv[])
         }
         cout << "Client: " << msg << endl;
         cout << ">";
-        string data;
-        getline(cin, data);
-        memset(&msg, 0, sizeof(msg)); //clear the buffer
-        strcpy(msg, data.c_str());
-        if(data == "exit")
-        {
-            //send to the client that server has closed the connection
-            send(newSd, (char*)&msg, strlen(msg), 0);
-            break;
-        }
-        //send the message to client
-        bytesWritten += send(newSd, (char*)&msg, strlen(msg), 0);
+        // process request here
+        process_get_request(newSd, msg, bytesRead);
+       
     }
     //we need to close the socket descriptors after we're all done
     gettimeofday(&end1, NULL);
