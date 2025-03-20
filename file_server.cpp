@@ -17,46 +17,43 @@
 using namespace std;
 
 #define REQUEST_BUFFER_LENGTH 1500
-#define FILE_BUFFER_LENGTH 1500
+#define FILE_BUFFER_LENGTH 1024
 
 int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read) {
-    if (bytes_read >= REQUEST_BUFFER_LENGTH) return 1;
     fstream file;
     request_buffer[bytes_read] = '\0';
     string request = string(request_buffer);
     if (request.substr(0,4) == "GET ") {
         size_t pos = request.find(" ", 4);
-        string path = request.substr(4, pos);
+        string path = "." + request.substr(4, pos - 4);
+        file.open(path, ios::in | ios::ate);
+        int file_size = file.tellg();
+        file.close();
         file.open(path, ios::in | ios::binary);
         if(file.is_open()){
             cout<<"[LOG] : File is ready to Transmit.\n";
         }
         else{
-            cout<<"[ERROR] : File loading failed, Exititng.\n";
-            send(socket, "400", 4, 0);
+            cout<<"[ERROR] : " << path << " loading failed, Exititng.\n";
+            string not_found = "HTTP/1.1 404 File not found\r\n";
+            send(socket, not_found.c_str(), not_found.size(), 0);
             return 1;
         }
         int bytes_read = 0;
+        string response = "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n" 
+            "Content-Length: " + to_string(file_size) + "\r\n"
+            "\r\n";
+        send(socket, response.c_str(), response.size(), 0);
         char file_buffer[FILE_BUFFER_LENGTH];
-        do {
+        while (1) {
             memset(file_buffer, 0, FILE_BUFFER_LENGTH);
             file.read(file_buffer, FILE_BUFFER_LENGTH);
             if (file.gcount() == 0) break;
             int sent = send(socket, file_buffer, file.gcount(), 0);
-            
             cout<<"[LOG] : Transmitted Data Size "<<sent<<" Bytes.\n";
-        } while (1);//file.gcount() == FILE_BUFFER_LENGTH);
-        // if (file.read(file_buffer, FILE_BUFFER_LENGTH) || file.gcount() > 0) {
-        //     send(socket, file_buffer, FILE_BUFFER_LENGTH, 0);
-        //     cout<<"[LOG] : Transmitted Data Size "<<FILE_BUFFER_LENGTH<<" Bytes.\n";
-        // }
+        }
         file.close();
-        // string contents((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
-        // cout<<"[LOG] : Transmission Data Size "<<contents.length()<<" Bytes.\n";
-        // cout<<"[LOG] : Sending...\n";
-        // int bytes_sent = send(socket , contents.c_str() , contents.length() , 0 );
-        // cout<<"[LOG] : Transmitted Data Size "<<bytes_sent<<" Bytes.\n";
-        // cout<<"[LOG] : File Transfer Complete.\n";
     } else {
         send(socket, "huh", 4, 0);
     }
