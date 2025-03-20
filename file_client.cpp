@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
         }
         bytesWritten += send(clientSd, (char*)&msg, strlen(msg), 0);
         cout << "Awaiting server response..." << endl;
-        
-        while (1) {
+        int bytesIn = 0;
+        do {
             memset(&msg, 0, sizeof(msg));
             bytesRead += recv(clientSd, (char*)&msg, sizeof(msg), 0);
             if(!strcmp(msg, "exit"))
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
                 break;
             }
             cout << "Server: " << msg << endl;
-        }
+        } while (1)
     }
     gettimeofday(&end1, NULL);
     close(clientSd);

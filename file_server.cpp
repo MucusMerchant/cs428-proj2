@@ -55,7 +55,9 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         }
         file.close();
     } else {
-        send(socket, "huh", 4, 0);
+        string not_found = "HTTP/1.1 400 Bad request\r\n";
+        send(socket, not_found.c_str(), not_found.size(), 0);
+        return 1;
     }
     return 0;
 }
@@ -103,15 +105,6 @@ int main(int argc, char *argv[])
     //we need a new address to connect with the client
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
-    //accept, create a new socket descriptor to 
-    //handle the new connection with client
-    int newSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
-    if(newSd < 0)
-    {
-        cerr << "Error accepting request from client!" << endl;
-        exit(1);
-    }
-    cout << "Connected with client!" << endl;
     //lets keep track of the session time
     struct timeval start1, end1;
     gettimeofday(&start1, NULL);
@@ -119,7 +112,16 @@ int main(int argc, char *argv[])
     int bytesRead, bytesWritten = 0;
     while(1)
     {
-        //receive a message from the client (listen)
+        //accept, create a new socket descriptor to 
+        //handle the new connection with client
+        int newSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
+        if(newSd < 0)
+        {
+            cerr << "Error accepting request from client!" << endl;
+            break;
+        }
+        cout << "Connected with client!" << endl;
+        
         cout << "Awaiting client response..." << endl;
         memset(msg, 0, sizeof(msg));//clear the buffer
         bytesRead += recv(newSd, (char*)&msg, sizeof(msg), 0);
@@ -132,11 +134,12 @@ int main(int argc, char *argv[])
         cout << ">";
         // process request here
         process_get_request(newSd, msg, bytesRead);
-       
+        close(newSd);
+        cout << "Closed connection" << endl;
     }
     //we need to close the socket descriptors after we're all done
     gettimeofday(&end1, NULL);
-    close(newSd);
+    
     close(serverSd);
     cout << "********Session********" << endl;
     cout << "Bytes written: " << bytesWritten << " Bytes read: " << bytesRead << endl;
