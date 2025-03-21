@@ -16,6 +16,7 @@
 #include <fstream>
 #include <thread>
 #include <signal.h>
+#include <map>
 
 using namespace std;
 
@@ -48,8 +49,10 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
             return 1;
         }
         int bytes_read = 0;
+        string contentType = matchMimeType(path);
+        cout << "contentType is: " << contentType << endl;
         string response = "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n" 
+            "Content-Type: " + contentType + "\r\n" 
             "Content-Length: " + to_string(file_size) + "\r\n"
             "\r\n";
         send(socket, response.c_str(), response.size(), 0);
@@ -71,6 +74,21 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         return 1;
     }
     return 0;
+}
+
+string matchMimeType(string path) {
+    if (path.size() >= 4) {
+        int dotPlace = path.find_last_of(".");
+        map<string, string> contentTypes = {
+            {".html", "text/html"},
+            {".pdf", "application/pdf"},
+            {".css","text/css"},            
+            {".jpeg","image/jpeg"},            
+            {".jpg","image/jpeg"},                
+        };
+        return contentTypes[path.substr(dotPlace)];
+    }
+    return "text/html";
 }
 
 void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH]) 
@@ -101,15 +119,18 @@ int main(int argc, char *argv[])
 {
     // ignore sigpipe so we don't terminate whenever a client disconnects unexpectedly
     signal(SIGPIPE, SIG_IGN);
+    //need to catch ctrl+c so we can kill all threads (SIGTERM)
     signal(SIGINT, int_handler);
     //for the server, we only need to specify a port number
+    int port;
     if(argc != 2)
     {
         cerr << "Usage: port" << endl;
+        // cin >> port;
         exit(0);
     }
     //grab the port number
-    int port = atoi(argv[1]);
+    port = atoi(argv[1]);
     //buffer to send and receive messages with
     char msg[REQUEST_BUFFER_LENGTH];
      

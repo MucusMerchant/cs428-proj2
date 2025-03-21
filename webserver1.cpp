@@ -47,21 +47,10 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
             return 1;
         }
         int bytes_read = 0;
-        //START determining content type of requested resource
-        string contentType = "text/html";
-        int dotPlace = path.find_last_of(".");
-        map<string, string> contentTypes= {
-            {".html", "text/html"},
-            {".pdf", "application/pdf"},
-            {".css", "text/css"},
-            {".jpg", "image/jpeg"},
-            {".jpeg", "image/jpeg"},
-        };
-        if (path.size() >= 4 ) {
-            contentType = contentTypes[path.substr(dotPlace)];
-        }
+        
+        string contentType = matchMimeType(path);
         cout << "contentType is: " << contentType << endl;
-        //END content type identification
+        
         string response = "HTTP/1.1 200 OK\r\n"
             "Content-Type: " + contentType + "\r\n" 
             "Content-Length: " + to_string(file_size) + "\r\n"
@@ -86,7 +75,20 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
     }
     return 0;
 }
-
+string matchMimeType(string path) {
+    if (path.size() >= 4) {
+        int dotPlace = path.find_last_of(".");
+        map<string, string> contentTypes = {
+            {".html", "text/html"},
+            {".pdf", "application/pdf"},
+            {".css","text/css"},            
+            {".jpeg","image/jpeg"},            
+            {".jpg","image/jpeg"},                
+        };
+        return contentTypes[path.substr(dotPlace)];
+    }
+    return "text/html";
+}
 //Server side
 int main(int argc, char *argv[])
 {
