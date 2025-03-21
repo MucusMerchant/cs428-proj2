@@ -38,11 +38,11 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         file.open(path, ios::in | ios::binary);
         if(file.is_open())
         {
-            cout<<"[LOG] : File is ready to Transmit.\n";
+            cout<<"[thread " << this_thread::get_id() << "] Transmitting "<<file_size<<" bytes.\n";
         }
         else
         {
-            cout<<"[ERROR] : " << path << " loading failed, Exititng.\n";
+            cout<<"Error loading file " << path << ", Exititng.\n";
             string not_found = "HTTP/1.1 404 File not found\r\n";
             send(socket, not_found.c_str(), not_found.size(), 0);
             return 1;
@@ -61,8 +61,6 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
             if (file.gcount() == 0) break;
             int sent = send(socket, file_buffer, file.gcount(), 0);
             if (sent == -1) break;
-            cout<<"[thread " << this_thread::get_id() << "] transmitted "<<sent<<" bytes.\n";
-            sleep(1);
         }
         file.close();
     } 
@@ -79,7 +77,7 @@ void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH])
 {  
     cout << "Connected with client!" << endl;
         
-    memset(msg, 0, REQUEST_BUFFER_LENGTH);//clear the buffer
+    memset(msg, 0, REQUEST_BUFFER_LENGTH);
     int bytesRead = recv(newSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
     if(!strcmp(msg, "exit"))
     {
