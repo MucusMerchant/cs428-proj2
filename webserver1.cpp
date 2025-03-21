@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <fstream>
+#include <map>
 
 using namespace std;
 
@@ -46,8 +47,23 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
             return 1;
         }
         int bytes_read = 0;
+        //START determining content type of requested resource
+        string contentType = "text/html";
+        int dotPlace = path.find_last_of(".");
+        map<string, string> contentTypes= {
+            {".html", "text/html"},
+            {".pdf", "application/pdf"},
+            {".css", "text/css"},
+            {".jpg", "image/jpeg"},
+            {".jpeg", "image/jpeg"},
+        };
+        if (path.size() >= 4 ) {
+            contentType = contentTypes[path.substr(dotPlace)];
+        }
+        cout << "contentType is: " << contentType << endl;
+        //END content type identification
         string response = "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n" 
+            "Content-Type: " + contentType + "\r\n" 
             "Content-Length: " + to_string(file_size) + "\r\n"
             "\r\n";
         send(socket, response.c_str(), response.size(), 0);

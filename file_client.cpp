@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     int bytesRead, bytesWritten = 0;
     struct timeval start1, end1;
     gettimeofday(&start1, NULL);
-    while(1)
+    while(1);
     {
         cout << ">";
         string data;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         if(data == "exit")
         {
             send(clientSd, (char*)&msg, strlen(msg), 0);
-            break;
+            // break;
         }
         bytesWritten += send(clientSd, (char*)&msg, strlen(msg), 0);
         cout << "Awaiting server response..." << endl;
@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
                 break;
             }
             cout << "Server: " << msg << endl;
-        } while (1)
+        } 
+        while (1);
     }
     gettimeofday(&end1, NULL);
     close(clientSd);
