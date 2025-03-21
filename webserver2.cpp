@@ -15,21 +15,35 @@
 #include <fcntl.h>
 #include <fstream>
 #include <thread>
-#include <map>
 #include <vector>
-#include <unordered_map>
 #include <signal.h>
-#include <map>
+#include <unordered_map>
 #include <mutex>
+#include <atomic>
 
 using namespace std;
 
 #define REQUEST_BUFFER_LENGTH 1500
 #define FILE_BUFFER_LENGTH 1024
-unordered_map<thread::id, thread> active_threads;
-vector<thread::id> finished_threads;
-mutex active_threads_mutex;
+atomic<bool> termFlag{false};
 int serverSd = socket(AF_INET, SOCK_STREAM, 0);
+
+
+string matchMimeType(string path) {
+    if (path.size() >= 4) {
+        int dotPlace = path.find_last_of(".");
+        unordered_map<string, string> contentTypes = {
+            {".html", "text/html"},
+            {".pdf", "application/pdf"},
+            {".css","text/css"},            
+            {".jpeg","image/jpeg"},            
+            {".jpg","image/jpeg"},   
+            {".ico","image/x-icon"},             
+        };
+        return contentTypes[path.substr(dotPlace)];
+    }
+    return "text/html";
+}
 
 int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read)
 {
@@ -84,53 +98,39 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
     return 0;
 }
 
-string matchMimeType(string path) {
-    if (path.size() >= 4) {
-        int dotPlace = path.find_last_of(".");
-        map<string, string> contentTypes = {
-            {".html", "text/html"},
-            {".pdf", "application/pdf"},
-            {".css","text/css"},            
-            {".jpeg","image/jpeg"},            
-            {".jpg","image/jpeg"},                
-        };
-        return contentTypes[path.substr(dotPlace)];
-    }
-    return "text/html";
-}
+
 
 void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH]) 
 {  
     cout << "Connected with client!" << endl;
-        
-    memset(msg, 0, REQUEST_BUFFER_LENGTH);
-    int bytesRead = recv(newSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
-    if(!strcmp(msg, "exit"))
-    {
-        cout << "Client has quit the session" << endl;
+    while(!termFlag.load()) {
+        memset(msg, 0, REQUEST_BUFFER_LENGTH);
+        int bytesRead = recv(newSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
+        if(!strcmp(msg, "exit"))
+        {
+            cout << "Client has quit the session" << endl;
+            return;
+        }
+        cout << "> " << msg << endl;
+        process_get_request(newSd, msg, bytesRead);
+        close(newSd);
+        cout << "Closed connection" << endl;
         return;
+        
     }
-    cout << "> " << msg << endl;
-    process_get_request(newSd, msg, bytesRead);
     close(newSd);
-    cout << "Closed connection" << endl;
-    active_threads_mutex.lock();
-    finished_threads.push_back(this_thread::get_id());
-    active_threads_mutex.unlock();
+    cout << "terminated connection" << endl;
     return;
 }
 
 void int_handler(int n)
 {
     cout << "Waiting for active threads" << endl;
-    for (auto &[key, value] : active_threads)
-    {
-        value.join();
-        cout << "Joined thread " << key << endl;
-    }
+    termFlag.store(true);
     close(serverSd);
     cout << "Bye" << endl;
-    exit(0);
+    // exit(0);
+    return;
 }
 
 int main(int argc, char *argv[])
@@ -144,7 +144,6 @@ int main(int argc, char *argv[])
     if(argc != 2)
     {
         cerr << "Usage: port" << endl;
-        // cin >> port;
         exit(0);
     }
     //grab the port number
@@ -174,9 +173,10 @@ int main(int argc, char *argv[])
         cerr << "Error binding socket to local address" << endl;
         exit(0);
     }
+    vector<thread> threadList;
     cout << "Waiting for a client to connect..." << endl;
-    
-    while (1)
+
+    while (!termFlag.load())
     {
         listen(serverSd, 5);
         //receive a request from client using accept
@@ -187,23 +187,19 @@ int main(int argc, char *argv[])
         int newSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
         if(newSd < 0)
         {
+            if(termFlag.load())
+                break;
             cerr << "Error accepting request from client!" << endl;
             continue;
         }
-
-        active_threads_mutex.lock();
-        for (auto &id : finished_threads)
-        {
-            active_threads[id].join();
-            active_threads.erase(id);
-            cout << "Joined thread " << id << endl;
-        }
-        finished_threads.clear();
-        active_threads_mutex.unlock();
-
-        thread data_thread(worker, newSd, msg);
-        active_threads[data_thread.get_id()] = move(data_thread);
+        // thread data_thread(worker, newSd, msg);
+        threadList.push_back(thread(worker, newSd, msg));
     }
-    int_handler(0);
+    for (auto &t : threadList) {
+        if (t.joinable()){
+            t.join();
+        }
+    }
+    // int_handler(0);
     return 0;   
 }

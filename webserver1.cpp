@@ -83,7 +83,8 @@ string matchMimeType(string path) {
             {".pdf", "application/pdf"},
             {".css","text/css"},            
             {".jpeg","image/jpeg"},            
-            {".jpg","image/jpeg"},                
+            {".jpg","image/jpeg"},   
+            {".ico","image/x-icon"},                          
         };
         return contentTypes[path.substr(dotPlace)];
     }
