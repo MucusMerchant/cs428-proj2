@@ -14,26 +14,32 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <fstream>
+
 using namespace std;
 
 #define REQUEST_BUFFER_LENGTH 1500
 #define FILE_BUFFER_LENGTH 1024
 
-int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read) {
+int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read)
+{
     fstream file;
     request_buffer[bytes_read] = '\0';
     string request = string(request_buffer);
-    if (request.substr(0,4) == "GET ") {
+
+    if (request.substr(0,4) == "GET ") 
+    {
         size_t pos = request.find(" ", 4);
         string path = "." + request.substr(4, pos - 4);
         file.open(path, ios::in | ios::ate);
         int file_size = file.tellg();
         file.close();
         file.open(path, ios::in | ios::binary);
-        if(file.is_open()){
+        if(file.is_open())
+        {
             cout<<"[LOG] : File is ready to Transmit.\n";
         }
-        else{
+        else
+        {
             cout<<"[ERROR] : " << path << " loading failed, Exititng.\n";
             string not_found = "HTTP/1.1 404 File not found\r\n";
             send(socket, not_found.c_str(), not_found.size(), 0);
@@ -46,21 +52,26 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
             "\r\n";
         send(socket, response.c_str(), response.size(), 0);
         char file_buffer[FILE_BUFFER_LENGTH];
-        while (1) {
+        while (1)
+        {
             memset(file_buffer, 0, FILE_BUFFER_LENGTH);
             file.read(file_buffer, FILE_BUFFER_LENGTH);
             if (file.gcount() == 0) break;
             int sent = send(socket, file_buffer, file.gcount(), 0);
-            cout<<"[LOG] : Transmitted Data Size "<<sent<<" Bytes.\n";
+            if (sent == -1) break;
+            cout<<"[thread " << this_thread::get_id() << "] transmitted "<<sent<<" bytes.\n";
         }
         file.close();
-    } else {
+    } 
+    else 
+    {
         string not_found = "HTTP/1.1 400 Bad request\r\n";
         send(socket, not_found.c_str(), not_found.size(), 0);
         return 1;
     }
     return 0;
 }
+
 //Server side
 int main(int argc, char *argv[])
 {
@@ -91,8 +102,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
     //bind the socket to its local address
-    int bindStatus = bind(serverSd, (struct sockaddr*) &servAddr, 
-        sizeof(servAddr));
+    int bindStatus = bind(serverSd, (struct sockaddr*) &servAddr, sizeof(servAddr));
     if(bindStatus < 0)
     {
         cerr << "Error binding socket to local address" << endl;
@@ -105,11 +115,7 @@ int main(int argc, char *argv[])
     //we need a new address to connect with the client
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
-    //lets keep track of the session time
-    struct timeval start1, end1;
-    gettimeofday(&start1, NULL);
-    //also keep track of the amount of data sent as well
-    int bytesRead, bytesWritten = 0;
+    
     while(1)
     {
         //accept, create a new socket descriptor to 
@@ -122,29 +128,19 @@ int main(int argc, char *argv[])
         }
         cout << "Connected with client!" << endl;
         
-        cout << "Awaiting client response..." << endl;
         memset(msg, 0, sizeof(msg));//clear the buffer
-        bytesRead += recv(newSd, (char*)&msg, sizeof(msg), 0);
+        int bytesRead = recv(newSd, (char*)&msg, sizeof(msg), 0);
+        cout << bytesRead << " " << sizeof(msg) << endl;
         if(!strcmp(msg, "exit"))
         {
             cout << "Client has quit the session" << endl;
             break;
         }
-        cout << "Client: " << msg << endl;
-        cout << ">";
-        // process request here
+        cout << "> " << msg << endl;
         process_get_request(newSd, msg, bytesRead);
         close(newSd);
         cout << "Closed connection" << endl;
     }
-    //we need to close the socket descriptors after we're all done
-    gettimeofday(&end1, NULL);
-    
     close(serverSd);
-    cout << "********Session********" << endl;
-    cout << "Bytes written: " << bytesWritten << " Bytes read: " << bytesRead << endl;
-    cout << "Elapsed time: " << (end1.tv_sec - start1.tv_sec) 
-        << " secs" << endl;
-    cout << "Connection closed..." << endl;
     return 0;   
 }
