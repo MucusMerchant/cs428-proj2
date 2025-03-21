@@ -15,13 +15,21 @@
 #include <fcntl.h>
 #include <fstream>
 #include <thread>
+#include <map>
+#include <vector>
+#include <unordered_map>
 #include <signal.h>
 #include <map>
+#include <mutex>
 
 using namespace std;
 
 #define REQUEST_BUFFER_LENGTH 1500
 #define FILE_BUFFER_LENGTH 1024
+unordered_map<thread::id, thread> active_threads;
+vector<thread::id> finished_threads;
+mutex active_threads_mutex;
+int serverSd = socket(AF_INET, SOCK_STREAM, 0);
 
 int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read)
 {
@@ -39,7 +47,7 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         file.open(path, ios::in | ios::binary);
         if(file.is_open())
         {
-            cout<<"[thread " << this_thread::get_id() << "] Transmitting "<<file_size<<" bytes.\n";
+            cout<<"Transmitting "<<file_size<<" bytes...\n";
         }
         else
         {
@@ -106,12 +114,22 @@ void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH])
     process_get_request(newSd, msg, bytesRead);
     close(newSd);
     cout << "Closed connection" << endl;
+    active_threads_mutex.lock();
+    finished_threads.push_back(this_thread::get_id());
+    active_threads_mutex.unlock();
     return;
 }
 
 void int_handler(int n)
 {
-    cout << "Interrupt" << endl;
+    cout << "Waiting for active threads" << endl;
+    for (auto &[key, value] : active_threads)
+    {
+        value.join();
+        cout << "Joined thread " << key << endl;
+    }
+    close(serverSd);
+    cout << "Bye" << endl;
     exit(0);
 }
 
@@ -143,7 +161,7 @@ int main(int argc, char *argv[])
  
     //open stream oriented socket with internet address
     //also keep track of the socket descriptor
-    int serverSd = socket(AF_INET, SOCK_STREAM, 0);
+    
     if(serverSd < 0)
     {
         cerr << "Error establishing the server socket" << endl;
@@ -157,7 +175,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
     cout << "Waiting for a client to connect..." << endl;
-    //listen for up to 5 requests at a time
     
     while (1)
     {
@@ -173,10 +190,20 @@ int main(int argc, char *argv[])
             cerr << "Error accepting request from client!" << endl;
             continue;
         }
+
+        active_threads_mutex.lock();
+        for (auto &id : finished_threads)
+        {
+            active_threads[id].join();
+            active_threads.erase(id);
+            cout << "Joined thread " << id << endl;
+        }
+        finished_threads.clear();
+        active_threads_mutex.unlock();
+
         thread data_thread(worker, newSd, msg);
-        data_thread.detach();
-        //lets keep track of the session time
+        active_threads[data_thread.get_id()] = move(data_thread);
     }
-    close(serverSd);
+    int_handler(0);
     return 0;   
 }
