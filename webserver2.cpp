@@ -18,7 +18,6 @@
 #include <vector>
 #include <signal.h>
 #include <unordered_map>
-#include <mutex>
 #include <atomic>
 
 using namespace std;

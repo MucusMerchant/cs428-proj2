@@ -2,23 +2,29 @@
 
 ## CS428 Project-2: Web Server
 
-[This file uses Markdown, so please use correct Markdown syntax when editing the file]: #
 
 ### SUMMARY
 
-[Provide a short description of your program's functionality, no more than a couple sentences]: #
+The program initializes a web server that receives and responds to TCP and HTTP connections, serving files that are available within it's directory. The server is multithreaded and can initialize multiple TCP requests at once.
 
 ### NOTES, KNOWN BUGS, AND/OR INCOMPLETE PARTS
 
-[Add any notes you have here and/or any parts of the project you were not able to complete]: #
+Program works as described with no incomplete parts. There is also a version of the project identical to the submission version currently running on seniho.com:8050/home.html
+
 
 ### REFERENCES
 
-[List any outside resources used]: #
+[List any outside resources used]: 
+https://www.w3schools.com/html/html_favicon.asp
+https://stackoverflow.com/questions/58783794/having-problems-working-with-sigint-signal-in-c-unix
+
 
 ### INSTRUCTIONS
 
 [Provide clear and complete step-by-step instructions on how to run and test your project]: #
+Compile the project with "g++ webserver2.cpp -o WS2.out", and then run it with "./WS2.out 8050" to specify port 8050
+To test the web server, identify the IP address of the machine running the program and visit the web page at "serverIP:8050/home.html" on any browser connected to the same local network. the server will then respond with the proper resources.
+
 
 ### SUBMISSION
 
@@ -29,10 +35,13 @@ By signing my name below and submitting the project, I confirm the above stateme
 * **Submission date:**
 
 * **Team member 1 name:**
+Andrew Shen-Costello
 
 * **Team member 1 tasks:**
 
 * **Team member 2 name (N/A, if not applicable):**
+Senih Okuyucu
 
 * **Team member 2 tasks (N/A, if not applicable):**
+I helped develop dynamic responses to HTTP Requests from the web server through HTTP request parsing, as well as contributions to memory leak testing and multithread development. I also helped with resource location resolution and network troubleshooting. 
 
