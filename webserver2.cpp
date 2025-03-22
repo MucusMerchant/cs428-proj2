@@ -75,6 +75,7 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         string response = "HTTP/1.1 200 OK\r\n"
             "Content-Type: " + contentType + "\r\n" 
             "Content-Length: " + to_string(file_size) + "\r\n"
+            "Connection: close\r\n"
             "\r\n";
         send(socket, response.c_str(), response.size(), 0);
         char file_buffer[FILE_BUFFER_LENGTH];
@@ -101,8 +102,8 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
 
 void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH]) 
 {  
-    cout << "Connected with client!" << endl;
-    while(!termFlag.load()) {
+    cout << "new thread!" << endl;
+    // while(!termFlag.load()) {
         memset(msg, 0, REQUEST_BUFFER_LENGTH);
         int bytesRead = recv(newSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
         if(!strcmp(msg, "exit"))
@@ -110,13 +111,13 @@ void worker(int newSd, char msg[REQUEST_BUFFER_LENGTH])
             cout << "Client has quit the session" << endl;
             return;
         }
-        cout << "> " << msg << endl;
+        cout << "> " << this_thread::get_id() << "\n"<< msg << endl;
         process_get_request(newSd, msg, bytesRead);
         close(newSd);
         cout << "Closed connection" << endl;
         return;
         
-    }
+    // }
     close(newSd);
     cout << "terminated connection" << endl;
     return;
