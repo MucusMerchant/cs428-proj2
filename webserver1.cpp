@@ -21,6 +21,22 @@ using namespace std;
 #define REQUEST_BUFFER_LENGTH 1500
 #define FILE_BUFFER_LENGTH 1024
 
+string matchMimeType(string path) {
+    if (path.size() >= 4) {
+        int dotPlace = path.find_last_of(".");
+        map<string, string> contentTypes = {
+            {".html", "text/html"},
+            {".pdf", "application/pdf"},
+            {".css","text/css"},            
+            {".jpeg","image/jpeg"},            
+            {".jpg","image/jpeg"},   
+            {".ico","image/x-icon"},                          
+        };
+        return contentTypes[path.substr(dotPlace)];
+    }
+    return "text/html";
+}
+
 int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], int bytes_read)
 {
     fstream file;
@@ -75,21 +91,7 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
     }
     return 0;
 }
-string matchMimeType(string path) {
-    if (path.size() >= 4) {
-        int dotPlace = path.find_last_of(".");
-        map<string, string> contentTypes = {
-            {".html", "text/html"},
-            {".pdf", "application/pdf"},
-            {".css","text/css"},            
-            {".jpeg","image/jpeg"},            
-            {".jpg","image/jpeg"},   
-            {".ico","image/x-icon"},                          
-        };
-        return contentTypes[path.substr(dotPlace)];
-    }
-    return "text/html";
-}
+
 //Server side
 int main(int argc, char *argv[])
 {
