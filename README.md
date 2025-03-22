@@ -13,7 +13,6 @@ Program works as described with no incomplete parts. There is also a version of 
 
 ### REFERENCES
 
-[List any outside resources used]: 
 https://www.w3schools.com/html/html_favicon.asp
 https://stackoverflow.com/questions/58783794/having-problems-working-with-sigint-signal-in-c-unix
 https://github.com/bozkurthan/Simple-TCP-Server-Client-CPP-Example
