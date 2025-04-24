@@ -65,7 +65,7 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         file.open(path, ios::in | ios::binary);
         if(file.is_open())
         {
-            cout<<"Transmitting "<<file_size<<" bytes...\n";
+            //cout<<"Transmitting "<<file_size<<" bytes...\n";
         }
         else
         {
@@ -86,7 +86,6 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
         }
         int bytes_read = 0;
         string contentType = matchMimeType(path);
-        cout << "contentType is: " << contentType << endl;
         string response = "HTTP/1.1 200 OK\r\n"
             "Content-Type: " + contentType + "\r\n" 
             "Content-Length: " + to_string(file_size) + "\r\n"
@@ -109,7 +108,7 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
     {
         string not_found = "HTTP/1.1 400 Bad request\r\n"
             "Content-Type: text/html\r\n"
-            "Content-Length: 100\r\n"
+            "Content-Length: 122\r\n"
             "\r\n"
             "<!DOCTYPE html>\r\n"
             "<html>\r\n"
@@ -123,22 +122,14 @@ int process_get_request(int socket, char request_buffer[REQUEST_BUFFER_LENGTH], 
     }
 }
 
-
-
 void worker(int newSd) 
 {  
-    cout << "new thread!" << endl;
     char msg[REQUEST_BUFFER_LENGTH] = {0};
     int bytesRead = recv(newSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
-    if(!strcmp(msg, "exit"))
-    {
-        cout << "Client has quit the session" << endl;
-        return;
-    }
     int response_code = process_get_request(newSd, msg, bytesRead);
     close(newSd);
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    cout << "server-response," << response_code << "," << this_thread::get_id() << "," << ctime(&time) << endl;
+    cout << "server-response," << response_code << "," << this_thread::get_id() << "," << ctime(&time);
     return;
         
 }

@@ -25,38 +25,34 @@
 using namespace std;
 
 #define REQUEST_BUFFER_LENGTH 1500
+#define RESPONSE_BUFFER_LENGTH 1500
 #define FILE_BUFFER_LENGTH 1024
+
 atomic<bool> termFlag{false};
 int proxySd = socket(AF_INET, SOCK_STREAM, 0);
 
 void forward_response(int newClientSd, int newServerSd)
 {
-    char buf[1500] = {0};
-    int bytesRead = recv(newServerSd, (char*)buf, 1500, 0);
+    char buf[RESPONSE_BUFFER_LENGTH] = {0};
+    int bytesRead = recv(newServerSd, (char*)buf, RESPONSE_BUFFER_LENGTH, 0);
     while (bytesRead > 0)
     {
         send(newClientSd, buf, bytesRead, 0);
-        bytesRead = recv(newServerSd, (char*)buf, 1500, 0);
+        bytesRead = recv(newServerSd, (char*)buf, RESPONSE_BUFFER_LENGTH, 0);
     }
 }
 
 void worker(int newClientSd, int newServerSd) 
 {  
-    cout << "new thread!" << endl;
     time_t time;
     char msg[REQUEST_BUFFER_LENGTH] = {0};
     int bytesRead = recv(newClientSd, (char*)msg, REQUEST_BUFFER_LENGTH, 0);
-    if(!strcmp(msg, "exit"))
-    {
-        cout << "Client has quit the session" << endl;
-        return;
-    }
     send(newServerSd, msg, bytesRead, 0);
     time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    cout << "proxy-forward," << "server" << "," << this_thread::get_id() << "," << ctime(&time) << endl;
+    cout << "proxy-forward," << "server" << "," << this_thread::get_id() << "," << ctime(&time);
     forward_response(newClientSd, newServerSd);
     time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    cout << "proxy-forward," << "client" << "," << this_thread::get_id() << "," << ctime(&time) << endl;
+    cout << "proxy-forward," << "client" << "," << this_thread::get_id() << "," << ctime(&time);
     close(newClientSd);
     close(newServerSd);
     return;
@@ -69,7 +65,6 @@ void int_handler(int n)
     termFlag.store(true);
     close(proxySd);
     cout << "Bye" << endl;
-    // exit(0);
     return;
 }
 
@@ -121,7 +116,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
     vector<thread> threadList;
-    cout << "Waiting for a client to connect..." << endl;
 
     while (!termFlag.load())
     {
@@ -149,6 +143,7 @@ int main(int argc, char *argv[])
         }
         threadList.push_back(thread(worker, newClientSd, newServerSd));
     }
+
     for (auto &t : threadList) {
         if (t.joinable()){
             t.join();

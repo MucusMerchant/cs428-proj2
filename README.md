@@ -1,29 +1,35 @@
-# Binghamton University, Spring 2025
+# Binghamton University, School of Computing, Spring 2025
 
-## CS428 Project-2: Web Server
+## CS428 Project-3: Web Proxy Server
 
+[This file uses Markdown, so please use correct Markdown syntax when editing the file]: #
 
 ### SUMMARY
 
-The program initializes a web server that receives and responds to TCP and HTTP connections, serving files that are available within its directory. The webserver for Part 1 is quite simple. It handles one HTTP request at a time, closing the connection after each request. The webserver for Part 2 supports multithreading and can initialize multiple HTTP and TCP requests at once. New requests are first handled by a welcome socket, which opens a new socket and handles the request in a separate thread. Both servers can handle several file types, including .jpg, .ico, .pdf, and send the appropriate header.
+This project implements a simple proxy server that can forward requests from a client to a server and forward responses from a server to a client. Each time a new client connects, the proxy server opens two new sockets, one for the client and one for the server. A thread handles the forwarding so that multiple clients can be handled simultaneously. The proxy server does not parse or process any request or response that it receives, but it is written to handle chunked HTTP responses.
+
+The webserver implementation is essentially identical to the webserver implemented in the second part of Project 2.
 
 ### NOTES, KNOWN BUGS, AND/OR INCOMPLETE PARTS
 
-Program works as described with no incomplete parts. There is also a version of the project identical to the submission version currently running on seniho.com:8050/home.html. 
+N/A
 
 ### REFERENCES
 
 https://www.w3schools.com/html/html_favicon.asp
+
 https://stackoverflow.com/questions/58783794/having-problems-working-with-sigint-signal-in-c-unix
+
 https://github.com/bozkurthan/Simple-TCP-Server-Client-CPP-Example
+
 https://github.com/Wizardous/TCP-File-Transfer/blob/dbd80ba734c65efdb0f7b19c506ca8a7c640f223/file_server.cpp#L79 
+
+https://stackoverflow.com/questions/997946/how-to-get-current-time-and-date-in-c 
 
 ### INSTRUCTIONS
 
 [Provide clear and complete step-by-step instructions on how to run and test your project]: #
-Compile the project with "g++ webserver2.cpp -o WS2.out", and then run it with "./WS2.out 8050" to specify port 8050
-To test the web server, identify the IP address of the machine running the program and visit the web page at "serverIP:8050/home.html" on any browser connected to the same local network. the server will then respond with the proper resources.
-
+Compile the webserver with "g++ webserver.cpp -o webserver", and then run it with "./webserver <webserver-port>" to specify port <webserver-port>. Compile the proxy server with "g++ proxyserver.cpp -o proxyserver" and run it with "./proxyserver <proxy-port> <webserver-ip> <webserver-port>". Once the webserver and the proxy server are running, you can make requests from the proxy server's ip address and port to retreive files from the webserver.
 
 ### SUBMISSION
 
@@ -35,17 +41,17 @@ By signing my name below and submitting the project, I confirm the above stateme
 *Senih Okuyucu*
 
 * **Submission date:**
-3/21/2025
+4/24/2025
 
 * **Team member 1 name:**
 Andrew Shen-Costello
 
 * **Team member 1 tasks:**
-I worked on the HTTP request parsing and response logic that is the basis of webservers for both Part 1 and Part 2. I also worked on the code that creates and manages new threads for each HTTP request in Part 2. Throughout this project, I helped test and debug the webservers with the wget command and the browser.
+I worked on the proxy-server-to-webserver socket handling as well as the forwarding logic for requests and responses.
 
 * **Team member 2 name (N/A, if not applicable):**
 Senih Okuyucu
 
 * **Team member 2 tasks (N/A, if not applicable):**
-I helped develop dynamic responses to HTTP Requests from the web server through HTTP request parsing, as well as contributions to memory leak testing and multithread development. I also helped with resource location resolution and network troubleshooting. 
+
 
