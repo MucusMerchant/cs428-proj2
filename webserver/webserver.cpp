@@ -140,7 +140,7 @@ void int_handler(int n)
     termFlag.store(true);
     close(serverSd);
     cout << "Bye" << endl;
-    // exit(0);
+    exit(0);
     return;
 }
 

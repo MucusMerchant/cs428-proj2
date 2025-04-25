@@ -65,6 +65,7 @@ void int_handler(int n)
     termFlag.store(true);
     close(proxySd);
     cout << "Bye" << endl;
+    exit(0);
     return;
 }
 
