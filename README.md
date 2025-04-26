@@ -41,7 +41,7 @@ By signing my name below and submitting the project, I confirm the above stateme
 *Senih Okuyucu*
 
 * **Submission date:**
-4/24/2025
+4/25/2025
 
 * **Team member 1 name:**
 Andrew Shen-Costello
@@ -53,5 +53,5 @@ I worked on the proxy-server-to-webserver socket handling as well as the forward
 Senih Okuyucu
 
 * **Team member 2 tasks (N/A, if not applicable):**
-
+General debugging and testing for memory leaks and thread management. Also refactored previous code from last project for minor improvements.
 
